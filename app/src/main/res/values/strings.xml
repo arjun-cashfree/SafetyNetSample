@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">SafetynetSample</string>
-    <string name="generate_safetynet_token">Generate SafetyNet Token</string>
+    <string name="generate_safetynet_token">Generate Enrollment Token</string>
 </resources>

@@ -6,6 +6,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.gocashfree.cashfreedev.rest.APIErrorListener;
+import com.gocashfree.cashfreedev.rest.APISuccessListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.ApiException;
@@ -25,7 +27,7 @@ public class GoogleSafetyNetAPI {
                             new OnSuccessListener<SafetyNetApi.AttestationResponse>() {
                                 @Override
                                 public void onSuccess(SafetyNetApi.AttestationResponse response) {
-                                    successListener.onSuccess(response.getJwsResult());
+                                    successListener.onSuccess(response.getJwsResult(), "");
                                 }
                             })
                     .addOnFailureListener((Activity) context, new OnFailureListener() {

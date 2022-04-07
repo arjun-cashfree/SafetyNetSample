@@ -3,6 +3,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://maven.cashfree.com/snapshot' }
         jcenter() // Warning: this repository is going to shut down soon
     }
 }
