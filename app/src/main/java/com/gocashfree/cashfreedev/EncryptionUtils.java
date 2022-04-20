@@ -52,9 +52,13 @@ import com.nimbusds.jose.JWEObject;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jwt.EncryptedJWT;
+import com.nimbusds.jwt.SignedJWT;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -63,6 +67,7 @@ import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
 import org.jose4j.lang.JoseException;
+import org.json.JSONException;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -101,9 +106,10 @@ public final class EncryptionUtils {
     private static final String HEADER_IAT = "iat";
     private static final String HEADER_EXP = "exp";
 
-    private static RSAPublicKey publicKey;
+    public static RSAPublicKey publicKey;
     public static String visaPublicKey;
-    private static RSAPrivateKey privateKey;
+    public static String visaPublicKey1="";
+    public static RSAPrivateKey privateKey;
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -115,6 +121,69 @@ public final class EncryptionUtils {
         return kpg.generateKeyPair();
     }
 
+
+
+    public static String generateJWSFromDPrivateKey(String idToken, String nonce, String safetynetToken) throws JSONException, NoSuchAlgorithmException {
+        String token;
+        try {
+            Algorithm algorithm = com.auth0.jwt.algorithms.Algorithm.RSA256(publicKey, privateKey);
+            Map<String, Object> payloadMap = new HashMap<>();
+
+            payloadMap.put("idToken", idToken);
+            payloadMap.put("safetyNetData", safetynetToken);
+            payloadMap.put("timestamp", nonce);
+            token = JWT.create()
+                    .withIssuer("auth0")
+                    .withPayload(payloadMap)
+                    .sign(algorithm);
+            System.out.println("Signed ::"+token);
+//            try {
+//                generateJWE(token);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (JoseException e) {
+//                e.printStackTrace();
+//            } catch (InvalidKeySpecException e) {
+//                e.printStackTrace();
+//            }
+//            JWT.create().withIssuer("auth0").withPayload(token).sign()
+            return token;
+        } catch (JWTCreationException exception){
+            //Invalid Signing configuration / Couldn't convert Claims.
+        }
+        return "";
+    }
+
+    public static String generateJWSFromDPrivateKey(String idToken, String nonce, String safetynetToken, String privateKey) throws JSONException, NoSuchAlgorithmException {
+        String token;
+        try {
+            Algorithm algorithm = com.auth0.jwt.algorithms.Algorithm.RSA256(publicKey, (RSAPrivateKey) getPrivateKey(privateKey));
+            Map<String, Object> payloadMap = new HashMap<>();
+
+            payloadMap.put("idToken", idToken);
+            payloadMap.put("safetyNetData", safetynetToken);
+            payloadMap.put("timestamp", nonce);
+            token = JWT.create()
+                    .withIssuer("auth0")
+                    .withPayload(payloadMap)
+                    .sign(algorithm);
+            System.out.println("Signed ::"+token);
+//            try {
+//                generateJWE(token);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (JoseException e) {
+//                e.printStackTrace();
+//            } catch (InvalidKeySpecException e) {
+//                e.printStackTrace();
+//            }
+//            JWT.create().withIssuer("auth0").withPayload(token).sign()
+            return token;
+        } catch (JWTCreationException exception){
+            //Invalid Signing configuration / Couldn't convert Claims.
+        }
+        return "";
+    }
 
 
     public static String generateJWS(String androidID, String nonce, String safetynetToken) throws NoSuchAlgorithmException {
@@ -147,16 +216,16 @@ public final class EncryptionUtils {
             .withPayload(payloadMap)
             .sign(algorithm);
             System.out.println(token);
-            try {
-
-                generateJWE(token);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (JoseException e) {
-                e.printStackTrace();
-            } catch (InvalidKeySpecException e) {
-                e.printStackTrace();
-            }
+//            try {
+//
+//                generateJWE(token);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (JoseException e) {
+//                e.printStackTrace();
+//            } catch (InvalidKeySpecException e) {
+//                e.printStackTrace();
+//            }
 //            JWT.create().withIssuer("auth0").withPayload(token).sign()
             return token;
         } catch (JWTCreationException exception){
@@ -166,8 +235,6 @@ public final class EncryptionUtils {
     }
 
     public static String generateJWS(String value) throws NoSuchAlgorithmException, GenericSecurityException {
-
-//    public static String createJws(String jwe, String signingKid, RSAPrivateKey rsaPrivateKey, Map<String, Object> additionalHeaders) throws GenericSecurityException {
         JWSObject jwsObject = new JWSObject((new com.nimbusds.jose.JWSHeader.Builder(JWSAlgorithm.RS256))
                 .type(JOSEObjectType.JOSE).contentType(CONTENT_TYPE_JWE).build(), new Payload(value));
         JWSSigner signer = new RSASSASigner(privateKey);
@@ -178,7 +245,6 @@ public final class EncryptionUtils {
         } catch (JOSEException e) {
             throw new GenericSecurityException(e.getMessage(), e);
         }
-//    }
     }
 
     @SuppressLint("NewApi")
@@ -205,28 +271,20 @@ public final class EncryptionUtils {
     }
 
     public static void setVisaDevicePublicKey(String key) throws IOException {
-
         visaPublicKey = key;
-
     }
 
     public static String generateJWE(String signedJwt) throws IOException, JoseException, InvalidKeySpecException, NoSuchAlgorithmException {
-
-        JsonWebEncryption jwe = new JsonWebEncryption();
-        jwe.setContentTypeHeaderValue("JWT");
-        jwe.setKey(getSandboxPublicKey());
-        jwe.setPayload(signedJwt);
-        jwe.setAlgorithmHeaderValue(KeyManagementAlgorithmIdentifiers.RSA_OAEP_256);
-        jwe.setEncryptionMethodHeaderParameter(ContentEncryptionAlgorithmIdentifiers.AES_256_GCM);
-        String encryptedJwt = jwe.getCompactSerialization();
-        System.out.println("Encrypted ::" + encryptedJwt);
-        return encryptedJwt;
+        return generateJWE(signedJwt, getSandboxPublicKey());
     }
     public static String generateJWE(String value, String publicKey) throws IOException, JoseException, InvalidKeySpecException, NoSuchAlgorithmException {
+        return generateJWE(value, getPublicKey(publicKey));
+    }
 
+    public static String generateJWE(String value, PublicKey publicKey) throws JoseException {
         JsonWebEncryption jwe = new JsonWebEncryption();
         jwe.setContentTypeHeaderValue("JWT");
-        jwe.setKey(getKey(publicKey));
+        jwe.setKey(publicKey);
         jwe.setPayload(value);
         jwe.setAlgorithmHeaderValue(KeyManagementAlgorithmIdentifiers.RSA_OAEP_256);
         jwe.setEncryptionMethodHeaderParameter(ContentEncryptionAlgorithmIdentifiers.AES_256_GCM);
@@ -234,13 +292,78 @@ public final class EncryptionUtils {
         System.out.println("Encrypted ::" + encryptedJwt);
         return encryptedJwt;
     }
+
+    public static String generateJWE(String value, RSAPublicKey publicKey) throws IOException, JoseException, InvalidKeySpecException, NoSuchAlgorithmException {
+
+        JsonWebEncryption jwe = new JsonWebEncryption();
+        jwe.setContentTypeHeaderValue("JWT");
+        jwe.setKey((publicKey));
+        jwe.setPayload(value);
+        jwe.setAlgorithmHeaderValue(KeyManagementAlgorithmIdentifiers.RSA_OAEP_256);
+        jwe.setEncryptionMethodHeaderParameter(ContentEncryptionAlgorithmIdentifiers.AES_256_GCM);
+        String encryptedJwt = jwe.getCompactSerialization();
+        System.out.println("Encrypted ::" + encryptedJwt);
+        return encryptedJwt;
+    }
+
+    public static String decryptJWE(String value, RSAPrivateKey privateKey) throws ParseException, JOSEException {
+        RSADecrypter rsaDecrypter = new RSADecrypter(privateKey);
+        EncryptedJWT encryptedJWT = EncryptedJWT.parse(value);
+        encryptedJWT.decrypt(rsaDecrypter);
+        System.out.println("Decrypted ::" + encryptedJWT.getPayload());
+        return encryptedJWT.getPayload().toString();
+    }
+
+    public static String digestJWS(String value) throws ParseException, JOSEException {
+        JWSVerifier jwsVerifier = new RSASSAVerifier((RSAPublicKey) getPublicKey(visaPublicKey));
+        SignedJWT signedJWT = SignedJWT.parse(value);
+        System.out.println("Verify Signature ::" + signedJWT.verify(jwsVerifier));
+        System.out.println("Decrypted ::" + signedJWT.getPayload());
+        return signedJWT.getPayload().toString();
+    }
     @SuppressLint("NewApi")
-    public static PublicKey getKey(String key){
+    public static PublicKey getPublicKey(String key){
         try{
             byte[] byteKey = Base64.getDecoder().decode(key.getBytes());
             X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
             KeyFactory kf = KeyFactory.getInstance("RSA");
             return kf.generatePublic(X509publicKey);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    @SuppressLint("NewApi")
+    public static PrivateKey getPrivateKey(String key){
+        try{
+            byte[] byteKey = Base64.getDecoder().decode(key.getBytes());
+            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(byteKey);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            return kf.generatePrivate(X509publicKey);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    @SuppressLint("NewApi")
+    public static String getPrivateKeyString(PrivateKey key){
+        try{
+            return new String(key.getEncoded());
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    @SuppressLint("NewApi")
+    public static String getPublicKeyString(PrivateKey key){
+        try{
+            return new String(key.getEncoded());
         }
         catch(Exception e){
             e.printStackTrace();

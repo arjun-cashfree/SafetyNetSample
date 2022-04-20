@@ -12,9 +12,12 @@
         android:layout_height="wrap_content"
         android:text="@string/generate_safetynet_token"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.073" />
+
     <EditText
         android:id="@+id/paresTxt"
         android:layout_width="match_parent"
@@ -25,6 +28,19 @@
         android:maxLines="1"
         app:layout_constraintRight_toRightOf="parent"/>
 
+    <EditText
+        android:id="@+id/idTokenTxt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:text="eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAtMjU2In0.XaRdBp6DIotEfIwwWRjG3XmRk55X5D0u38NEPcWPGWXvgqv5qr21K4vVZt7ZdqNBHgDcTHTRNZEOqv1WWyqdkghbsBdAIahH4B0gMbPx7ToQy_LcpKRUmxaQnbUCfZWVz-LwmlKCPjWUhbEcxU6Z2acX2YHxnXjxlJmpyGEA_Z-eGvaQWzOkY5qs5LkdyC1MWLYTmKE2jHGIlDkMVsuRBoMPOUeYTrb-YrLkhswB8I3B2dx9iBlorXiswxrdksED23TTdqyoKkDcSYDXiLxpcLJL1JxofMZqUpkuEM6ONcI4VeL00yxWgeiWg9faH35OidowLtbMhmWqdUw94VTYIQ.aUQxp7BY_zYBciBN.2be72UKTKJ8sQFXq-l7DXQ2SoYe7h_-llCJwIktkTV5y9UCuuHXsF8DXwLZlYzQJAjRfnLf1KstEGI8p2Gi0DdZJEJO_aHkiJreO0irEeYGi4n9P2sY0nKCWjxP-Yj5P3JuWkkG3UHMBaE92DYOohkqj0TJGRAMmeVCnhF46pR7W5Kg7CTIvwAJDtE_afiycljZs9OINuaW0NrqT_NgrxSyQ3HJ4jDYFLKE870J7gJHT6IKwXwoENySgTXJzsVHaCrQs_4yXsT-gHj1ePkuFe7j6DdgUAifKVO1RcZCOcpvaQDG_3acWeyoBwNT3EPA2Lb9P-iLTSzvG5iB3gkuVMP8hlJTReYcyxKJDXnoTZUIMyMwBpUGy2GH2FVKia4-EV--bZOZ1BvftXUJU27fOdjpRvCoiO9BhpqWm39epu4UIA7PSyaardvWuAOQJYWuK21AWbwXcW1knZIo4w4rJUaKzVKyFNs8rVRvBf5EdupfNAIdZx2L7DMqUaUC8mwG8EXJFtxntRfrvraR82kdZCsZjxhn8dGeKkRVzEnAOAoFvuizCc9z0UKuTo8M8sZpd4cxwBkxv6PB7RiqZ3H4IbGqp0lUdrQ7RL8IhNAcKUnd8AyJ-YI5Hhb6K99147pu95ZHx06HVffJJmR-ffVwI4ww6-uHvZ74zZswYtTiG6V5FHHbLgx97ErtBKTH87Rs-B0OjGQwu1Ns5cds6nC7W8O1ZgCSHTjVzkPnQT4uMmqMd55C8Mmxlh7wfGwhsmUYq3sfo7uOhcotoG7ZfkddAwv7jIA0FVUkJFbTugEQrU4tKCxeBJ2OkPIvhQvX6s2ya5FHy9zeJ3c7dYbgTK-9XGGcA0KcybZSRXQ2Cs7PUxrFwVw6UYVq68JxN5irwpMFgFbVzC0s6YKYF4vEKKk_6joxJiZL6HDPH9h8WpFds3sJYb2Hhd4hA8k6dfey3hQFnOb7-g1U6pIY7c5r2TV2DxjrAME4kETffb1Kz-x1LqItXNpT5XAhzlAPnvBZWtSTx97Kbxx1qriyDPN-mrsHo0sY3InM-mNZOC8MB7rpWl2yAUrmF46m5oiKQhrSI3ZD-A_8dNqBpFuw3j6po9MJV_ezn5uaD9Tb3dDnrBB-qPYu18fPcXH8qxQHReJm5b01GRvEmtjSF8FtWOI8ZElYS_LN_rieY6WnQLVb4zTcdX3KScrfgVpfp6QmpmPqGpCKd6wu_Wfvu5J5Ko3DoSNneA6pgOO1XSQVG1b6j5P_BwcZ42qxaIvhgUwIrv2y2waJDGsViAe8H_1aL7QosCcYeJWDnaofCqJjLXkFERohTqyPzWsLzuw1JgCvdBslmlDMZ9w8lODSs4-inQ1DEwwa8eZeBnRewHhuN87jLQIZL7ASms_OEUyMYTmH_nly5niPzy5daIMqd4w99N0FAdfHwyilrbKEn9f9VOuDT833dH6uvzGsFXROX0IE00vJGiWSfC02r9FYsFBk8lq2pkr3NucKUMVuH9R5am3AWKPbrOJZI-cDqyH_en9xEB4AHKQrlb6bJ_XcJjtfptSVKU6CIdBz8Qxk7TYMdCJhOXUICux2yQYyVs9kitD7TcpBOcbZYCn51vdq3zBXWc5YCtmALpirhw04Vmbno0kInbPustHz6c-ngaFPWMBS2CCVPR3Oz9j-qVZYW9RKfNbqR-7QjutKe9P0_1mb1UFalQ77IgzJyzS_YgNoK-zNsN5tLqpAr38GHMVexhOlCtEXXMUhrTd52X4WkxQbcMusl9KNR12QmfqjXLf6a4IRhQDwo1-l1ksbb4rJT9QksH_Nm3Nqq2KNZSOkvaA0IZ0pso5Ce2h3u2JlLlZgPzE_g2ZxH_GLtP1r2i9997xntZDZPLSLE58fVk8ebnn2w2xPqml04JHbbwbazu863KKFZXz3xoNri9RSbXWtHce-tN5Mpg97paFY10_sEKM0geZMLJCF7fzrA7KuvuJFUxTuOzDOy-PY1GDrz_ggA5ZF2yLGNvhez6vcnvO2hs0ZhYvy-dyVEe3pYjgZkoi7rsR0DTB-WOHTqjB7OP-g7cUofSVsriBKVhGPK5c1xwo97pa9cpJBwEm6SgmzqgPbjUP50yhS32d4jVdAWmUssRA4REFwM-yF1dFlGs5X0rtj_4AdixbwGqRQP7zTy6YI0BllA_-mk83i1K640pxv8NsNUuXvdxnVsUBZ71mp8whKGaFaLs-UjJPkTff_KU8p-Q4Uu8NsF-YW7ASpRN9_SoV0EoVPkRB0Z5yvL.wdomjcsQH5RDUsNa8ThNRA"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button" />
+
     <Button
         android:id="@+id/signedParesBtn"
         android:layout_width="wrap_content"
@@ -33,7 +49,19 @@
         app:layout_constraintTop_toBottomOf="@+id/paresTxt"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:enabled="false"
+        android:enabled="true"
         />
+
+    <Button
+        android:id="@+id/idTokenBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
+        android:enabled="true"
+        android:text="Decrypt ID TOKEN"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/paresTxt" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

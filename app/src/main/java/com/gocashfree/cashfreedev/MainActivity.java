@@ -1,5 +1,7 @@
 package com.gocashfree.cashfreedev;
 
+import static com.gocashfree.cashfreedev.EncryptionUtils.visaPublicKey;
+
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -17,21 +19,37 @@ import com.gocashfree.cashfreedev.rest.APIErrorListener;
 import com.gocashfree.cashfreedev.rest.APISuccessListener;
 import com.gocashfree.cashfreedev.rest.DeviceEnrollmentAPI;
 import com.gocashfree.cashfreedev.rest.DeviceValidationAPI;
+import com.google.android.gms.safetynet.SafetyNetApi;
+import com.nimbusds.jose.JOSEException;
 
 import org.jose4j.lang.JoseException;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
 public class MainActivity extends AppCompatActivity {
     Button button;
     EditText paresTxt;
+    EditText tokenTxt;
     private Button signParesBtn;
+    private Button idTokenBtn;
 
     String authCode;
     String xCorrID;
@@ -45,7 +63,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         button = findViewById(R.id.button);
         signParesBtn = findViewById(R.id.signedParesBtn);
+        idTokenBtn = findViewById(R.id.idTokenBtn);
         paresTxt = findViewById(R.id.paresTxt);
+        tokenTxt = findViewById(R.id.idTokenTxt);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -141,11 +161,31 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Pares is empty", Toast.LENGTH_SHORT).show();
                 } else {
                     try {
-                        new DeviceValidationAPI().validateDevice(signedDeviceID, vDeviceId, encryptedAuthCode, EncryptionUtils.generateJWE(EncryptionUtils.generateJWS(paresTxt.getText().toString()), EncryptionUtils.visaPublicKey), xCorrID, new APISuccessListener() {
+
+//                        JSONObject pares = new JSONObject();
+//                        pares.put("cavv","");
+//                        pares.put("eciflag","05");
+//                        pares.put("xid","");
+//                        pares.put("paresstatus","Y");
+//                        pares.put("signatureverification","Y");
+//
+//                        String urlDecodedStr = URLDecoder.decode(decompressStr(paresTxt.getText().toString()));
+//                        System.out.println("urlDecodedStr ::\n"+(urlDecodedStr));
+//                        byte[] base64DecodedStr = Base64.decode(urlDecodedStr, Base64.DEFAULT);
+//                        String paresStr = new String(base64DecodedStr, StandardCharsets.UTF_8);
+//                        System.out.println(decompressStr(paresStr));
+//                        parseXml(paresStr);
+                        String signedPares = EncryptionUtils.generateJWS(paresTxt.getText().toString());
+                        System.out.println("signedPares\t:" + signedPares);
+                        String encryptedPares = EncryptionUtils.generateJWE(signedPares, visaPublicKey);
+                        System.out.println("encryptedPares\t:" + encryptedPares);
+                        System.out.println("visaPublicKey\t:" + visaPublicKey);
+                        new DeviceValidationAPI().validateDevice(signedDeviceID, vDeviceId, encryptedAuthCode, encryptedPares, xCorrID, new APISuccessListener() {
                             @Override
                             public void onSuccess(String response, String headers) {
-                                setClipboard(MainActivity.this, response);
+                                setClipboard(MainActivity.this, response + "\nSignedPares:\t" + signedPares);
                                 Log.d(DeviceValidationAPI.class.getName() + " response:", response);
+
                             }
                         }, new APIErrorListener() {
                             @Override
@@ -161,6 +201,37 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        idTokenBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                try {
+                    String idToken = EncryptionUtils.digestJWS(EncryptionUtils.decryptJWE(tokenTxt.getText().toString(), EncryptionUtils.privateKey));
+
+                    long timeInMillis = Calendar.getInstance().getTimeInMillis();
+                    String nonce = timeInMillis + "";
+                    new GoogleSafetyNetAPI().generateSafetyNetToken(MainActivity.this, "AIzaSyAOIJhdoCME7oMIerSgIYb5p7FmnCf7_5c", nonce, new APISuccessListener() {
+                        @Override
+                        public void onSuccess(String response, String headers) {
+                            try {
+                                String jws = EncryptionUtils.generateJWSFromDPrivateKey(idToken, nonce, response);
+                                String jwe = EncryptionUtils.generateJWE(jws, visaPublicKey);
+                                setClipboard(MainActivity.this, "Encrypted ID Token: "+ jwe);
+                            } catch (JSONException | NoSuchAlgorithmException | JoseException |IOException | InvalidKeySpecException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, new APIErrorListener() {
+                        @Override
+                        public void onError(String error) {
+                            System.out.println("Error ::"+ error);
+                        }
+                    });
+                } catch (ParseException | JOSEException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void setClipboard(Context context, String text) {
@@ -173,6 +244,61 @@ public class MainActivity extends AppCompatActivity {
             clipboard.setPrimaryClip(clip);
         }
     }
+    public void parseXml(String xml) throws XmlPullParserException {
+        try {
+
+            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+            factory.setNamespaceAware(true);
+            XmlPullParser xpp = factory.newPullParser();
+
+            xpp.setInput( new StringReader( xml ) ); // pass input whatever xml you have
+            int eventType = xpp.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if(eventType == XmlPullParser.START_DOCUMENT) {
+                    Log.d("XML Parser","Start document");
+                } else if(eventType == XmlPullParser.START_TAG) {
+                    Log.d("XML Parser","Start tag "+xpp.getName());
+                } else if(eventType == XmlPullParser.END_TAG) {
+                    Log.d("XML Parser","End tag "+xpp.getName());
+                } else if(eventType == XmlPullParser.TEXT) {
+                    Log.d("XML Parser","Text "+xpp.getText()); // here you get the text from xml
+                }
+                eventType = xpp.next();
+            }
+            Log.d("XML Parser","End document");
+
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+ public String decompressStr (String str) throws IOException {
+     ByteArrayOutputStream baos = new ByteArrayOutputStream();
+     DeflaterOutputStream dos = new DeflaterOutputStream(baos);
+     dos.write(str.getBytes());
+     dos.flush();
+     dos.close();
+
+     // at this moment baos.toByteArray() holds the compressed data of "Hello World!"
+
+     // will decompress compressed "Hello World!"
+     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+     InflaterInputStream iis = new InflaterInputStream(bais);
+
+     String result = "";
+     byte[] buf = new byte[5];
+     int rlen = -1;
+     while ((rlen = iis.read(buf)) != -1) {
+         result += new String(Arrays.copyOf(buf, rlen));
+     }
+
+     // now result will contain "Hello World!"
+
+     System.out.println("Decompress result: " + result);
+     return  result;
+ }
 }
 
 class test {
