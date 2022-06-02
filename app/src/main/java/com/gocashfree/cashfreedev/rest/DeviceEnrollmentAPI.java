@@ -24,4 +24,19 @@ public class DeviceEnrollmentAPI extends BaseApi {
 //        System.out.println(body);
         geCFExecutor().executeCertPinnedPostRequest( "https://sandbox.consumerapi.digital.visa.com/resource-broker/vcolite/v1/authcode",  body, null, successListener, errorListener);
     }
+
+    public void enrollDevice(String cardAlias, String jwe, APISuccessListener successListener, APIErrorListener errorListener) {
+        String body = "{\"customerDetails\": {" +
+                "  \"merchantCustId\": \"1635927040\"," +
+                "  \"mobileNumber\": \"9094395340\"," +
+                "  \"merchantCardAlias\": \""+cardAlias+"\"" +
+                "    }," +
+                "\"merchantDetails\": {" +
+                "    \"merchantAppId\": \"com.gocashfree.cashfreedev\"" +
+                "}," +
+                "  \"staticKeyRefId\": \"VSC-STATIC-KEYS-21.02-00-SBX-MER-6\"," +
+                "  \"encryptedAuthCodeReq\": \"" + jwe + "\"}";
+//        System.out.println(body);
+        geCFExecutor().executeCertPinnedPostRequest( "https://sandbox.consumerapi.digital.visa.com/resource-broker/vcolite/v1/authcode",  body, null, successListener, errorListener);
+    }
 }

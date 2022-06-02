@@ -233,6 +233,55 @@ public final class EncryptionUtils {
         }
         return "";
     }
+    public static String generateJWSVBA(String androidID, String sessionID) throws NoSuchAlgorithmException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        String token;
+        KeyPair kp = kpg.generateKeyPair();
+        publicKey = (RSAPublicKey) kp.getPublic();
+        privateKey = (RSAPrivateKey) kp.getPrivate();
+        System.out.println("publicKey :\t"+printBase64Binary(kp.getPublic().getEncoded()));
+        System.out.println("privateKey :\t"+printBase64Binary(kp.getPrivate().getEncoded()));
+        try {
+            Algorithm algorithm = com.auth0.jwt.algorithms.Algorithm.RSA256(publicKey, privateKey);
+            Map<String, Object> payloadMap = new HashMap<>();
+            Map<String, String> publicKeyObject = new HashMap<>();
+            publicKeyObject.put("keyType", "RSA");
+            publicKeyObject.put("keySize", "2048");
+            publicKeyObject.put("publicKey", printBase64Binary(kp.getPublic().getEncoded()));
+            payloadMap.put("publicKeyObject",publicKeyObject);
+
+            Map<String, String> deviceIdData = new HashMap<>();
+            deviceIdData.put("deviceId", androidID);
+            deviceIdData.put("deviceIntegrityClaim", sessionID);
+            deviceIdData.put("deviceIntegrityClaimType","VBA_ANDROID");
+            payloadMap.put("deviceIdData",deviceIdData);
+            payloadMap.put("deviceIntegrityClaim", sessionID);
+            payloadMap.put("deviceIntegrityClaimType","VBA_ANDROID");
+
+
+            token = JWT.create()
+            .withIssuer("auth0")
+            .withPayload(payloadMap)
+            .sign(algorithm);
+            System.out.println(token);
+//            try {
+//
+//                generateJWE(token);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (JoseException e) {
+//                e.printStackTrace();
+//            } catch (InvalidKeySpecException e) {
+//                e.printStackTrace();
+//            }
+//            JWT.create().withIssuer("auth0").withPayload(token).sign()
+            return token;
+        } catch (JWTCreationException exception){
+            //Invalid Signing configuration / Couldn't convert Claims.
+        }
+        return "";
+    }
 
     public static String generateJWS(String value) throws NoSuchAlgorithmException, GenericSecurityException {
         JWSObject jwsObject = new JWSObject((new com.nimbusds.jose.JWSHeader.Builder(JWSAlgorithm.RS256))
