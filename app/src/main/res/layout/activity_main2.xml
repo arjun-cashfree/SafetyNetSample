@@ -10,12 +10,13 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal">
+
     <EditText
         android:id="@+id/checkoutURL"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="https://www.google.co.in/"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:text="https://43f9-119-82-99-242.ngrok.io/billpay/resources/vsctest" />
     <Button
         android:id="@+id/browseBtn"
         android:text="Browse"

@@ -342,6 +342,19 @@ public final class EncryptionUtils {
         return encryptedJwt;
     }
 
+    public static String generateJWEDevice(String value, String publicKey) throws JoseException {
+        PublicKey key = getPublicKey("MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp/cTz2tTS3XreDsTKcBaoFNUKe6tnvMM154mQLAJfUA5v4/2G+foZXhJHVJ36h6EyII7XlytP2wdNWwc7hyud9GQ3w1ClTvW3/HrOlp3WeF4keVpwWkFWQLMd7SzJS9ieu5nXufo8/jo43vTibS9JzJCCz6BCOE8tpmpDUxaVzHlG3VzEH9Kg7NJjHbQmDewIC0JqE+Wc3vEnYeKc7+hDnPgxFLl32rhkY1fjqKQjb0bo0MkeDtb2vdqgq+YxByG9STEgDcqFceQ8NqV5RlribdiHLadBoqC+Gmvmq4ajeAZzt4NZAzE4hwPe95Nna+z7vk7HEC2W8blWoe+BzNWBQIDAQAB");
+        JsonWebEncryption jwe = new JsonWebEncryption();
+        jwe.setContentTypeHeaderValue("JWT");
+        jwe.setKey(key);
+        jwe.setPayload(value);
+        jwe.setAlgorithmHeaderValue(KeyManagementAlgorithmIdentifiers.RSA_OAEP_256);
+        jwe.setEncryptionMethodHeaderParameter(ContentEncryptionAlgorithmIdentifiers.AES_256_GCM);
+        String encryptedJwt = jwe.getCompactSerialization();
+        System.out.println("Encrypted ::" + encryptedJwt);
+        return encryptedJwt;
+    }
+
     public static String generateJWE(String value, RSAPublicKey publicKey) throws IOException, JoseException, InvalidKeySpecException, NoSuchAlgorithmException {
 
         JsonWebEncryption jwe = new JsonWebEncryption();

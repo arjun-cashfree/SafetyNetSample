@@ -391,13 +391,13 @@ public class MainActivity extends AppCompatActivity {
                         text = parser.getText();
                         break;
                     case XmlPullParser.END_TAG:
-                        if (tagname.equalsIgnoreCase("xid")) {
-                            pares.put("xid", text);
-                        }else if (tagname.equalsIgnoreCase("cavv")) {
+                        if (tagname.equalsIgnoreCase("cavv")) {
                             pares.put("cavv", text);
                         }  else if (tagname.equalsIgnoreCase("eci")) {
-                            pares.put("eci", text);
-                        }
+                            pares.put("eciflag", text);
+                        }  else if (tagname.equalsIgnoreCase("xid")) {
+                        pares.put("xid", text);
+                    }
                         break;
 
                     default:

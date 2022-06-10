@@ -39,6 +39,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
@@ -56,8 +57,10 @@ public class MainActivity2 extends AppCompatActivity {
     String signedAuthCode;
     String signedDeviceID;
     String encryptedAuthCode;
+    static String cardAlias;
     private Button clearBtn;
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,12 +69,13 @@ public class MainActivity2 extends AppCompatActivity {
         browseBtn = findViewById(R.id.browseBtn);
         clearBtn = findViewById(R.id.clearBtn);
         webView = findViewById(R.id.webview);
+        webView.setWebContentsDebuggingEnabled(true);
         webView.getSettings().setJavaScriptEnabled(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR_MR1) {
             webView.getSettings().setDomStorageEnabled(true);
         }
         webView.addJavascriptInterface(new MainActivity2.JSInterface(), "VSCPaymentControllerBridge");
-        webView.loadUrl("https:~//www.google.com/");
+        webView.loadUrl("https://43f9-119-82-99-242.ngrok.io/billpay/resources/vsctest");
         browseBtn.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("NewApi")
             @Override
@@ -99,6 +103,7 @@ public class MainActivity2 extends AppCompatActivity {
 
         @android.webkit.JavascriptInterface
         public void initVSCPayment(final String cardAlias)  {
+            MainActivity2.cardAlias = cardAlias;
             String nonce = Calendar.getInstance().getTimeInMillis() + "nonce";
             Log.d(MainActivity.class.getName() + "\t nonce", nonce);
             new GoogleSafetyNetAPI().generateSafetyNetToken(MainActivity2.this, "AIzaSyAOIJhdoCME7oMIerSgIYb5p7FmnCf7_5c", nonce, new APISuccessListener() {
@@ -190,7 +195,8 @@ public class MainActivity2 extends AppCompatActivity {
 
         }
         @android.webkit.JavascriptInterface
-        public void setIDToken(String cardAlias, String idTokenStr) {
+        public void setIDToken(String idTokenStr) {
+            cardAlias = MainActivity2.cardAlias;
             Log.d("setIDToken", cardAlias);
             Toast.makeText(MainActivity2.this, "setIDToken called", Toast.LENGTH_SHORT).show();
 
@@ -232,32 +238,47 @@ public class MainActivity2 extends AppCompatActivity {
             } else {
                 try {
 
-                    JSONObject pares = new JSONObject();
-                    pares.put("cavv", "");
-                    pares.put("eciflag", "05");
-                    pares.put("xid", "");
-                    pares.put("paresstatus", "Y");
-                    pares.put("signatureverification", "Y");
+//                    JSONObject pares = new JSONObject();
+//                    pares.put("cavv", "");
+//                    pares.put("eciflag", "05");
+//                    pares.put("xid", "");
+//                    pares.put("paresstatus", "Y");
+//                    pares.put("signatureverification", "Y");
 
-                    String urlDecodedStr = URLDecoder.decode(paRes);
-                    System.out.println("urlDecodedStr ::\n" + (urlDecodedStr));
-                    byte[] base64DecodedStr = Base64.decode(urlDecodedStr, Base64.DEFAULT);
+//                    String urlDecodedStr = URLDecoder.decode(paRes);
+//                    System.out.println("urlDecodedStr ::\n" + (paRes));
+                    byte[] base64DecodedStr = Base64.decode(paRes, Base64.DEFAULT);
                     String paresStr = decompressToString(base64DecodedStr);
-                    System.out.println(paresStr);
+
+                    System.out.println("ParesString: " + paresStr);
                     JSONObject jsonObject = parseXML(paresStr);
-                    System.out.println(jsonObject.toString());
-                        String signedPares = EncryptionUtils.generateJWS(paRes);
+                    System.out.println("PaRes JSON: " +jsonObject.toString());
+
+                    JSONObject paresJSONCorrectOrder = new JSONObject();
+                    paresJSONCorrectOrder.put("cavv", jsonObject.getString("cavv"));
+                    paresJSONCorrectOrder.put("eciflag", jsonObject.getString("eciflag"));
+                    paresJSONCorrectOrder.put("xid", jsonObject.getString("xid"));
+                    paresJSONCorrectOrder.put("paresstatus", "Y");
+                    paresJSONCorrectOrder.put("signatureverification", "Y");
+                    System.out.println("Correct PaRes JSON: " +jsonObject.toString());
+
+
+
+                    String base64EncodedPaResJSON = Base64.encodeToString(paresJSONCorrectOrder.toString().getBytes(), Base64.NO_WRAP);
+                        String signedPares = EncryptionUtils.generateJWS(base64EncodedPaResJSON);
                         System.out.println("signedPares\t:" + signedPares);
                         String encryptedPares = EncryptionUtils.generateJWE(signedPares, visaPublicKey);
                         System.out.println("encryptedPares\t:" + encryptedPares);
                         System.out.println("visaPublicKey\t:" + visaPublicKey);
-                        new DeviceValidationAPI().validateDevice(signedDeviceID, vDeviceId, encryptedAuthCode, encryptedPares, xCorrID, new APISuccessListener() {
+                        new DeviceValidationAPI().validateDevice(MainActivity2.cardAlias, signedDeviceID, vDeviceId, encryptedAuthCode, encryptedPares, xCorrID, new APISuccessListener() {
                             @Override
                             public void onSuccess(String response, String headers) {
                                 setClipboard(MainActivity2.this, response + "\nSignedPares:\t" + signedPares);
                                 Log.d(DeviceValidationAPI.class.getName() + " response:", response);
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                                    webView.evaluateJavascript("window.initVSCAuthorize()')", new ValueCallback<String>() {
+
+                                    Log.d("Build version", "Build version is above kitkat");
+                                    webView.evaluateJavascript("window.initVSCAuthorize()", new ValueCallback<String>() {
                                         @Override
                                         public void onReceiveValue(String s) {
                                             // Checkout page starts verifying the payment

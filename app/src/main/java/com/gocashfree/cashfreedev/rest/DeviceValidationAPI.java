@@ -24,4 +24,23 @@ public class DeviceValidationAPI extends BaseApi {
 //        System.out.println(body);
         geCFExecutor().executeCertPinnedPostRequest( "https://sandbox.consumerapi.digital.visa.com/resource-broker/vcolite/v1/devices/"+deviceId,  body, xCorrID, successListener, errorListener);
     }
+
+    public void validateDevice(String cardAlias,String signedDeviceId, String deviceId, String authCode, String pares, String xCorrID, APISuccessListener successListener, APIErrorListener errorListener) {
+        String body = "{" +
+                "  \"customerDetails\": {" +
+                "    \"merchantCardAlias\": \"" + cardAlias + "\"," +
+                "    \"merchantCustId\": \"1635927040\"" +
+                "  }," +
+                "  \"merchantDetails\": {" +
+                "    \"merchantAppId\": \"com.gocashfree.cashfreedev\"" +
+                "  }," +
+                "  \"paRes\": \""+ pares+"\"," +
+                "  \"viesAuthDetails\": {" +
+                "    \"deviceId\": \""+ signedDeviceId+"\"," +
+                "    \"viesAuthCode\": \""+ authCode+"\"" +
+                "  }" +
+                "}";
+//        System.out.println(body);
+        geCFExecutor().executeCertPinnedPostRequest( "https://sandbox.consumerapi.digital.visa.com/resource-broker/vcolite/v1/devices/"+deviceId,  body, xCorrID, successListener, errorListener);
+    }
 }
