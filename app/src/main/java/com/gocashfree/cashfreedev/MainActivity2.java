@@ -80,6 +80,7 @@ public class MainActivity2 extends AppCompatActivity {
             webView.getSettings().setDomStorageEnabled(true);
         }
         encryptedSharedPref = EncryptedSharedPreferences.getPreferences(MainActivity2.this);
+        EncryptionUtils.setSharedPreferences(encryptedSharedPref);
         webView.addJavascriptInterface(new MainActivity2.JSInterface(), "VSCPaymentControllerBridge");
         webView.loadUrl("https://12be-119-82-99-242.ngrok.io/billpay/resources/vsctest");
         browseBtn.setOnClickListener(new View.OnClickListener() {
