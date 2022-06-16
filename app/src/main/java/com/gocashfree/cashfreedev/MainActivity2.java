@@ -1,5 +1,6 @@
 package com.gocashfree.cashfreedev;
 
+import static com.gocashfree.cashfreedev.EncryptionUtils.sharedPreferences;
 import static com.gocashfree.cashfreedev.EncryptionUtils.visaPublicKey;
 import static com.gocashfree.cashfreedev.MainActivity.decompressToString;
 import static com.gocashfree.cashfreedev.MainActivity.parseXML;
@@ -19,10 +20,12 @@ import android.util.Log;
 import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.gocashfree.cashfreedev.data_source.EncryptedSharedPreferences;
 import com.gocashfree.cashfreedev.rest.APIErrorListener;
 import com.gocashfree.cashfreedev.rest.APISuccessListener;
 import com.gocashfree.cashfreedev.rest.DeviceEnrollmentAPI;
@@ -34,6 +37,7 @@ import com.visa.app.vbaagent.core.VBAAgentConfig;
 import com.visa.app.vbaagent.core.VBAEnvironment;
 
 import org.jose4j.lang.JoseException;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -59,6 +63,7 @@ public class MainActivity2 extends AppCompatActivity {
     String encryptedAuthCode;
     static String cardAlias;
     private Button clearBtn;
+    private EncryptedSharedPreferences encryptedSharedPref;
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -74,8 +79,9 @@ public class MainActivity2 extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR_MR1) {
             webView.getSettings().setDomStorageEnabled(true);
         }
+        encryptedSharedPref = EncryptedSharedPreferences.getPreferences(MainActivity2.this);
         webView.addJavascriptInterface(new MainActivity2.JSInterface(), "VSCPaymentControllerBridge");
-        webView.loadUrl("https://43f9-119-82-99-242.ngrok.io/billpay/resources/vsctest");
+        webView.loadUrl("https://12be-119-82-99-242.ngrok.io/billpay/resources/vsctest");
         browseBtn.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("NewApi")
             @Override
@@ -92,17 +98,66 @@ public class MainActivity2 extends AppCompatActivity {
                 urlTxt.setText("");
             }
         });
-
     }
 
     public class JSInterface {
         @android.webkit.JavascriptInterface
-        public void getEnrollmentInfo (String cardAliasArrayString) {
-
+        public String getEnrollmentInfo (String cardAliasArrayString) {
+            Log.d("getEnrollmentInfo", cardAlias);
+            try {
+                JSONArray jsonArray = new JSONArray(cardAliasArrayString);
+                JSONObject resultObj = new JSONObject();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    if (sharedPreferences.contains(jsonArray.getString(i))) {
+                        resultObj.put(jsonArray.getString(i), true);
+                    } else {
+                        resultObj.put(jsonArray.getString(i), true);
+                    }
+                }
+                System.out.println(resultObj.toString());
+                return resultObj.toString();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
         }
 
         @android.webkit.JavascriptInterface
         public void initVSCPayment(final String cardAlias)  {
+            Log.d("initVSCPayment", cardAlias);
+            String idToken = sharedPreferences.getString(cardAlias, "");
+            long timeInMillis = Calendar.getInstance().getTimeInMillis();
+            String nonce = timeInMillis + "";
+            new GoogleSafetyNetAPI().generateSafetyNetToken(MainActivity2.this, "AIzaSyAOIJhdoCME7oMIerSgIYb5p7FmnCf7_5c", nonce, new APISuccessListener() {
+                @Override
+                public void onSuccess(String response, String headers) {
+                    try {
+                        String jws = EncryptionUtils.generateJWSFromDPrivateKey(idToken, nonce, response);
+                        String jwe = EncryptionUtils.generateJWE(jws, visaPublicKey);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                            webView.evaluateJavascript(String.format("window.startVSCRepeatPayment('%s','%s','%s')", cardAlias, signedDeviceID, jwe), new ValueCallback<String>() {
+                                @Override
+                                public void onReceiveValue(String s) {
+                                    // Checkout page starts verifying the payment
+                                    Log.d("TAG", s);
+                                }
+                            });
+                        }
+                    } catch (JSONException | NoSuchAlgorithmException | JoseException | IOException | InvalidKeySpecException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, new APIErrorListener() {
+                @Override
+                public void onError(String error) {
+                    System.out.println("Error ::" + error);
+                }
+            });
+        }
+
+        @android.webkit.JavascriptInterface
+        public void initVSCEnrollment(final String cardAlias) {
+            Log.d("CardAlias", cardAlias);
             MainActivity2.cardAlias = cardAlias;
             String nonce = Calendar.getInstance().getTimeInMillis() + "nonce";
             Log.d(MainActivity.class.getName() + "\t nonce", nonce);
@@ -183,17 +238,13 @@ public class MainActivity2 extends AppCompatActivity {
                     Log.e(MainActivity.class.getName() + "\t safetynet error", error);
                 }
             });
-        }
-
-        @android.webkit.JavascriptInterface
-        public void initVSCEnrollment(final String cardAlias) {
-            Log.d("CardAlias", cardAlias);
 
         }
         @android.webkit.JavascriptInterface
         public void setVISAStaticKeys(String visaStaticKeysArrayString) {
 
         }
+        @RequiresApi(api = Build.VERSION_CODES.GINGERBREAD)
         @android.webkit.JavascriptInterface
         public void setIDToken(String idTokenStr) {
             cardAlias = MainActivity2.cardAlias;
@@ -202,26 +253,8 @@ public class MainActivity2 extends AppCompatActivity {
 
             try {
                 String idToken = EncryptionUtils.digestJWS(EncryptionUtils.decryptJWE(idTokenStr, EncryptionUtils.privateKey));
+                sharedPreferences.edit().putString("cardAlias", idToken).apply();
 
-                long timeInMillis = Calendar.getInstance().getTimeInMillis();
-                String nonce = timeInMillis + "";
-                new GoogleSafetyNetAPI().generateSafetyNetToken(MainActivity2.this, "AIzaSyAOIJhdoCME7oMIerSgIYb5p7FmnCf7_5c", nonce, new APISuccessListener() {
-                    @Override
-                    public void onSuccess(String response, String headers) {
-                        try {
-                            String jws = EncryptionUtils.generateJWSFromDPrivateKey(idToken, nonce, response);
-                            String jwe = EncryptionUtils.generateJWE(jws, visaPublicKey);
-                            setClipboard(MainActivity2.this, "Encrypted ID Token: " + jwe);
-                        } catch (JSONException | NoSuchAlgorithmException | JoseException | IOException | InvalidKeySpecException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new APIErrorListener() {
-                    @Override
-                    public void onError(String error) {
-                        System.out.println("Error ::" + error);
-                    }
-                });
             } catch (ParseException | JOSEException e) {
                 e.printStackTrace();
             }
@@ -237,16 +270,6 @@ public class MainActivity2 extends AppCompatActivity {
                 Toast.makeText(MainActivity2.this, "Pares is empty", Toast.LENGTH_SHORT).show();
             } else {
                 try {
-
-//                    JSONObject pares = new JSONObject();
-//                    pares.put("cavv", "");
-//                    pares.put("eciflag", "05");
-//                    pares.put("xid", "");
-//                    pares.put("paresstatus", "Y");
-//                    pares.put("signatureverification", "Y");
-
-//                    String urlDecodedStr = URLDecoder.decode(paRes);
-//                    System.out.println("urlDecodedStr ::\n" + (paRes));
                     byte[] base64DecodedStr = Base64.decode(paRes, Base64.DEFAULT);
                     String paresStr = decompressToString(base64DecodedStr);
 

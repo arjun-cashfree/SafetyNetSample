@@ -45,6 +45,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gocashfree.cashfreedev.data_source.EncryptedSharedPreferences;
 import com.gocashfree.cashfreedev.rest.DeviceEnrollmentAPI;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
@@ -110,9 +111,14 @@ public final class EncryptionUtils {
     public static String visaPublicKey;
     public static String visaPublicKey1="";
     public static RSAPrivateKey privateKey;
+    public static EncryptedSharedPreferences sharedPreferences;
 
     static {
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    public static void setSharedPreferences(EncryptedSharedPreferences sharedPreferences) {
+        EncryptionUtils.sharedPreferences = sharedPreferences;
     }
 
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
@@ -190,18 +196,23 @@ public final class EncryptionUtils {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         kpg.initialize(2048);
         String token;
-        KeyPair kp = kpg.generateKeyPair();
-        publicKey = (RSAPublicKey) kp.getPublic();
-        privateKey = (RSAPrivateKey) kp.getPrivate();
-        System.out.println("publicKey :\t"+printBase64Binary(kp.getPublic().getEncoded()));
-        System.out.println("privateKey :\t"+printBase64Binary(kp.getPrivate().getEncoded()));
+        if (sharedPreferences.contains("devicePubkey") && sharedPreferences.contains("devicePvtKey")) {
+            publicKey = (RSAPublicKey) getPublicKey(sharedPreferences.getString("devicePubkey", "null"));
+            privateKey = (RSAPrivateKey) getPrivateKey(sharedPreferences.getString("devicePvtkey", "null"));
+        } else {
+            KeyPair kp = kpg.generateKeyPair();
+            publicKey = (RSAPublicKey) kp.getPublic();
+            privateKey = (RSAPrivateKey) kp.getPrivate();
+        }
+        System.out.println("publicKey :\t"+printBase64Binary(publicKey.getEncoded()));
+        System.out.println("privateKey :\t"+printBase64Binary(privateKey.getEncoded()));
         try {
             Algorithm algorithm = com.auth0.jwt.algorithms.Algorithm.RSA256(publicKey, privateKey);
             Map<String, Object> payloadMap = new HashMap<>();
             Map<String, String> publicKeyObject = new HashMap<>();
             publicKeyObject.put("keyType", "RSA");
             publicKeyObject.put("keySize", "2048");
-            publicKeyObject.put("publicKey", printBase64Binary(kp.getPublic().getEncoded()));
+            publicKeyObject.put("publicKey", printBase64Binary(publicKey.getEncoded()));
             payloadMap.put("publicKeyObject",publicKeyObject);
 
             Map<String, String> deviceIdData = new HashMap<>();
@@ -237,18 +248,23 @@ public final class EncryptionUtils {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         kpg.initialize(2048);
         String token;
-        KeyPair kp = kpg.generateKeyPair();
-        publicKey = (RSAPublicKey) kp.getPublic();
-        privateKey = (RSAPrivateKey) kp.getPrivate();
-        System.out.println("publicKey :\t"+printBase64Binary(kp.getPublic().getEncoded()));
-        System.out.println("privateKey :\t"+printBase64Binary(kp.getPrivate().getEncoded()));
+        if (sharedPreferences.contains("devicePubkey") && sharedPreferences.contains("devicePvtKey")) {
+            publicKey = (RSAPublicKey) getPublicKey(sharedPreferences.getString("devicePubkey", "null"));
+            privateKey = (RSAPrivateKey) getPrivateKey(sharedPreferences.getString("devicePvtkey", "null"));
+        } else {
+            KeyPair kp = kpg.generateKeyPair();
+            publicKey = (RSAPublicKey) kp.getPublic();
+            privateKey = (RSAPrivateKey) kp.getPrivate();
+        }
+        System.out.println("publicKey :\t"+printBase64Binary(publicKey.getEncoded()));
+        System.out.println("privateKey :\t"+printBase64Binary(privateKey.getEncoded()));
         try {
             Algorithm algorithm = com.auth0.jwt.algorithms.Algorithm.RSA256(publicKey, privateKey);
             Map<String, Object> payloadMap = new HashMap<>();
             Map<String, String> publicKeyObject = new HashMap<>();
             publicKeyObject.put("keyType", "RSA");
             publicKeyObject.put("keySize", "2048");
-            publicKeyObject.put("publicKey", printBase64Binary(kp.getPublic().getEncoded()));
+            publicKeyObject.put("publicKey", printBase64Binary(publicKey.getEncoded()));
             payloadMap.put("publicKeyObject",publicKeyObject);
 
             Map<String, String> deviceIdData = new HashMap<>();
