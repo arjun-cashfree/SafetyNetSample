@@ -254,7 +254,7 @@ public class MainActivity2 extends AppCompatActivity {
 
             try {
                 String idToken = EncryptionUtils.digestJWS(EncryptionUtils.decryptJWE(idTokenStr, EncryptionUtils.privateKey));
-                sharedPreferences.edit().putString("cardAlias", idToken).apply();
+                sharedPreferences.edit().putString(cardAlias, idToken).apply();
 
             } catch (ParseException | JOSEException e) {
                 e.printStackTrace();

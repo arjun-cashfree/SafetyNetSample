@@ -16,7 +16,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="https://43f9-119-82-99-242.ngrok.io/billpay/resources/vsctest" />
+        android:text="https://12be-119-82-99-242.ngrok.io/billpay/resources/vsctest" />
     <Button
         android:id="@+id/browseBtn"
         android:text="Browse"
